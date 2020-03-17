@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATLAS MACHINARUM</title>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --text: #111;
+            --accent: #d32f2f;
+            --line: #444;
+            --construction: #aaa;
+            --panel: #fff;
+            --border: #ccc;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 350px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        canvas {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center center;
+            opacity: 0.8;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--text);
+            padding-bottom: 5px;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 10px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        button:hover {
+            background: var(--accent);
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border: 1px solid var(--border);
+        }
+        input[type="range"] {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h1>Atlas Machinarum</h1>
+    <p>A computational atlas of mechanisms and motion.</p>
+    
+    <label for="mech-select">Mechanism:</label>
+    <select id="mech-select"></select>
+    
+    <div id="params-container"></div>
+    
+    <button id="btn-simulate">Compute</button>
+    <button id="btn-play">Play / Pause</button>
+    
+    <div style="margin-top:20px; font-size: 0.8rem; color: #666;">
+        <b>Metrics:</b>
+        <pre id="metrics-display"></pre>
+    </div>
+</div>
+
+<div id="main">
+    <canvas id="canvas"></canvas>
+    <div id="controls">
+        <label>Input Angle: <span id="angle-val">0</span></label>
+        <input type="range" id="angle-slider" min="0" max="99" value="0">
+    </div>
+</div>
+
+<script>
+    const API_URL = "http://localhost:8000/api";
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let pathData = [];
+    let currentIndex = 0;
+    let playing = false;
+    let animationId = null;
+    let scale = 1000; // pixels per unit
+    let offsetX = canvas.width / 2;
+    let offsetY = canvas.height / 2;
+
+    function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        offsetX = canvas.width / 2;
+        offsetY = canvas.height / 2;
+        draw();
+    }
+    window.addEventListener('resize', resize);
+    
+    async function loadMechanisms() {
+        const res = await fetch(`${API_URL}/mechanisms`);
+        const data = await res.json();
+        const select = document.getElementById('mech-select');
+        select.innerHTML = '';
+        for (let name in data) {
+            let opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        }
+        select.onchange = () => buildParams(data[select.value]);
+        
+        // Initial build
+        buildParams(data[select.value]);
+        simulate();
+    }
+    
+    function buildParams(params) {
+        const container = document.getElementById('params-container');
+        container.innerHTML = '<h2>Parameters</h2>';
+        for (let key in params) {
+            let label = document.createElement('label');
+            label.textContent = key;
+            let input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.001';
+            input.value = params[key];
+            input.id = `param-${key}`;
+            container.appendChild(label);
+            container.appendChild(input);
+        }
+    }
+    
+    async function simulate() {
+        const select = document.getElementById('mech-select');
+        const name = select.value;
+        const paramInputs = document.querySelectorAll('#params-container input');
+        let params = {};
+        paramInputs.forEach(inp => {
+            params[inp.id.replace('param-', '')] = parseFloat(inp.value);
+        });
+        
+        const res = await fetch(`${API_URL}/simulate/${name}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(params)
+        });
+        
+        if (!res.ok) {
+            const err = await res.json();
+            alert("Error: " + err.detail);
+            return;
+        }
+        
+        const data = await res.json();
+        pathData = data.path;
+        currentIndex = 0;
+        document.getElementById('angle-slider').max = pathData.length - 1;
+        document.getElementById('angle-slider').value = 0;
+        draw();
+    }
+    
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (pathData.length === 0) return;
+        
+        // Draw origin lines
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(offsetX, 0);
+        ctx.lineTo(offsetX, canvas.height);
+        ctx.moveTo(0, offsetY);
+        ctx.lineTo(canvas.width, offsetY);
+        ctx.stroke();
+        
+        // Draw coupler curve if P exists
+        if (pathData[0].points.P) {
+            ctx.strokeStyle = '#aaa';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            for (let i=0; i<pathData.length; i++) {
+                let p = pathData[i].points.P;
+                let x = offsetX + p[0] * scale;
+                let y = offsetY - p[1] * scale;
+                if (i===0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Current state
+        const state = pathData[currentIndex];
+        document.getElementById('angle-val').textContent = state.input.toFixed(2);
+        document.getElementById('metrics-display').textContent = JSON.stringify(state.metrics, null, 2);
+        
+        const points = state.points;
+        const ptsArray = Object.values(points).map(p => ({x: offsetX + p[0]*scale, y: offsetY - p[1]*scale}));
+        const keys = Object.keys(points);
+        
+        // Very basic drawing logic: connect points in order they are defined for now.
+        // Wait, different mechanisms need different topologies.
+        // I will draw all defined points and connect a few logic paths.
+        
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#333';
+        
+        const mechanism = document.getElementById('mech-select').value;
+        if (mechanism === 'slider_crank') {
+            drawLine(points.O, points.A);
+            drawLine(points.A, points.B);
+            drawPoint(points.O, 'O', true);
+            drawPoint(points.A, 'A');
+            drawSlider(points.B);
+        } else if (mechanism === 'four_bar') {
+            drawLine(points.O2, points.A);
+            drawLine(points.A, points.B);
+            drawLine(points.O4, points.B);
+            drawLine(points.A, points.P);
+            drawLine(points.B, points.P);
+            drawPoint(points.O2, 'O2', true);
+            drawPoint(points.O4, 'O4', true);
+            drawPoint(points.A, 'A');
+            drawPoint(points.B, 'B');
+            drawPoint(points.P, 'P');
+        } else if (mechanism === 'scotch_yoke') {
+            drawLine(points.O, points.A);
+            drawPoint(points.O, 'O', true);
+            drawPoint(points.A, 'A');
+            drawYoke(points.YokeCenter, points.A);
+        } else if (mechanism === 'geneva') {
+            drawLine(points.O2, points.A);
+            drawPoint(points.O2, 'O2', true);
+            drawPoint(points.O3, 'O3', true);
+            drawPoint(points.A, 'A');
+            drawPoint(points.B, 'Slot Edge');
+        } else if (mechanism === 'gears') {
+            drawPoint(points.O1, 'O1', true);
+            drawPoint(points.O2, 'O2', true);
+        } else if (mechanism === 'peaucellier') {
+            drawLine(points.O, points.B);
+            drawLine(points.O, points.C);
+            drawLine(points["O'"], points.A);
+            drawLine(points.A, points.B);
+            drawLine(points.B, points.P);
+            drawLine(points.P, points.C);
+            drawLine(points.C, points.A);
+            drawPoint(points.O, 'O', true);
+            drawPoint(points["O'"], "O'", true);
+            drawPoint(points.A, 'A');
+            drawPoint(points.B, 'B');
+            drawPoint(points.C, 'C');
+            drawPoint(points.P, 'P (Line)');
+        }
+    }
+    
+    function drawLine(p1, p2) {
+        if (!p1 || !p2) return;
+        ctx.beginPath();
+        ctx.moveTo(offsetX + p1[0]*scale, offsetY - p1[1]*scale);
+        ctx.lineTo(offsetX + p2[0]*scale, offsetY - p2[1]*scale);
+        ctx.stroke();
+    }
+    
+    function drawPoint(p, label, isGround=false) {
+        if (!p) return;
+        let x = offsetX + p[0]*scale;
+        let y = offsetY - p[1]*scale;
+        ctx.fillStyle = isGround ? '#d32f2f' : '#fff';
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = '#111';
+        ctx.font = '12px Courier';
+        ctx.fillText(label, x + 10, y - 10);
+    }
+    
+    function drawSlider(p) {
+        let x = offsetX + p[0]*scale;
+        let y = offsetY - p[1]*scale;
+        ctx.fillStyle = '#ddd';
+        ctx.strokeRect(x - 15, y - 10, 30, 20);
+        ctx.fillRect(x - 15, y - 10, 30, 20);
+        ctx.fillStyle = '#111';
+        ctx.fillText("B", x + 20, y - 15);
+    }
+    
+    function drawYoke(c, p) {
+        let cx = offsetX + c[0]*scale;
+        let cy = offsetY - c[1]*scale;
+        let px = offsetX + p[0]*scale;
+        let py = offsetY - p[1]*scale;
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(cx - 20, py - 40, 40, 80); // Yoke slot
+        // Rod
+        ctx.beginPath();
+        ctx.moveTo(cx + 20, cy);
+        ctx.lineTo(cx + 100, cy);
+        ctx.stroke();
+    }
+
+    document.getElementById('btn-simulate').onclick = simulate;
+    document.getElementById('angle-slider').oninput = (e) => {
+        currentIndex = parseInt(e.target.value);
+        draw();
+    };
+    document.getElementById('btn-play').onclick = () => {
+        playing = !playing;
+        if (playing) loop();
+    };
+    
+    function loop() {
+        if (!playing) return;
+        currentIndex = (currentIndex + 1) % pathData.length;
+        document.getElementById('angle-slider').value = currentIndex;
+        draw();
+        setTimeout(loop, 30);
+    }
+    
+    // Zoom/Pan
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+    canvas.onmousedown = e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; };
+    canvas.onmouseup = () => isDragging = false;
+    canvas.onmousemove = e => {
+        if (!isDragging) return;
+        offsetX += e.clientX - lastX;
+        offsetY += e.clientY - lastY;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        draw();
+    };
+    canvas.onwheel = e => {
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        // Keep origin stationary if mouse at center, else move it slightly. For simplicity, just scale around origin.
+        scale *= factor;
+        draw();
+    };
+
+    // Init
+    resize();
+    loadMechanisms();
+</script>
+</body>
+</html>
