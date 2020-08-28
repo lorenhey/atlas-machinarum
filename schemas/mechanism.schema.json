@@ -1,0 +1,76 @@
+{
+  "description": "Represents a computed state of a mechanism at a specific input.",
+  "properties": {
+    "input_val": {
+      "title": "Input Val",
+      "type": "number"
+    },
+    "points": {
+      "additionalProperties": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Points",
+      "type": "object"
+    },
+    "velocities": {
+      "additionalProperties": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "type": "array"
+      },
+      "default": {},
+      "title": "Velocities",
+      "type": "object"
+    },
+    "accelerations": {
+      "additionalProperties": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "type": "array"
+      },
+      "default": {},
+      "title": "Accelerations",
+      "type": "object"
+    },
+    "metrics": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "default": {},
+      "title": "Metrics",
+      "type": "object"
+    }
+  },
+  "required": [
+    "input_val",
+    "points"
+  ],
+  "title": "State",
+  "type": "object"
+}

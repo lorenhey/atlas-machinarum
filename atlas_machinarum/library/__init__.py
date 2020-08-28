@@ -4,6 +4,10 @@ from .scotch_yoke import ScotchYoke
 from .geneva import GenevaDrive
 from .gears import GearPair, PlanetaryGear
 from .straight_line import PeaucellierLipkin
+from .chebyshev import Chebyshev
+from .pantograph import Pantograph
+from .cam_follower import CamFollower
+from .ratchet import Ratchet
 
 __all__ = [
     "SliderCrank",
@@ -12,5 +16,9 @@ __all__ = [
     "GenevaDrive",
     "GearPair",
     "PlanetaryGear",
-    "PeaucellierLipkin"
+    "PeaucellierLipkin",
+    "Chebyshev",
+    "Pantograph",
+    "CamFollower",
+    "Ratchet"
 ]

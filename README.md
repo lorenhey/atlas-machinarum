@@ -14,28 +14,15 @@ Atlas Machinarum separates the **mathematical solver** from the **mechanism defi
 
 Every mechanism is fully parametric, and changes in geometry immediately reflect in kinematics, singularities, and metrics.
 
-## 2. Included Library
+## 2. Included Library & Features
 
-The initial corpus includes rigorous models for:
-- **Linkages**: 
-  - Slider-Crank (with offset and assembly modes)
-  - Four-Bar (with Grashof condition checking, transmission angles, and coupler curves)
-  - Peaucellier-Lipkin (exact straight-line generator)
-- **Intermittent Motion**:
-  - Geneva Drive (with accurate dwell and acceleration indexing)
-- **Motion Conversion**:
-  - Scotch Yoke (pure harmonic motion)
-- **Gears**:
-  - Spur Gear Pairs (internal and external)
-  - Planetary Gear Trains (Willis equations)
-
-## 3. Kinematic Analysis
-
-For each mechanism, the engine provides:
-- **Positions**: Exact $(x, y)$ coordinates for all joints.
-- **Velocities and Accelerations**: First and second derivatives, angular velocities.
-- **Metrics**: Transmission angles, mechanical advantage proxies, Grashof types.
-- **Singularities**: Detection of toggle positions and dead centers.
+- **Linkages**: Slider-Crank, Four-Bar, Scotch Yoke, Peaucellier-Lipkin, Chebyshev, Pantograph.
+- **Intermittent & Rotary**: Geneva Drive, Ratchet.
+- **Cam & Gears**: Cam Follower, Spur Gears, Planetary Gears.
+- **Search by Motion**: Find mechanisms by input/output types (e.g., Continuous to Intermittent).
+- **Compare Mode**: Overlay multiple mechanisms side-by-side visually.
+- **Data Export**: Export kinematic paths to CSV for external analysis.
+- **Declarative Schemas**: Extensible validation via JSON Schema (Pydantic).
 
 ## 4. Usage
 

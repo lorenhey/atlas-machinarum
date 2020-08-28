@@ -10,6 +10,14 @@ class JointType(str, Enum):
     GEAR = "gear"
     CAM = "cam"
 
+class MotionType(str, Enum):
+    CONTINUOUS_ROTATION = "continuous_rotation"
+    INTERMITTENT_ROTATION = "intermittent_rotation"
+    OSCILLATING_ROTATION = "oscillating_rotation"
+    CONTINUOUS_LINEAR = "continuous_linear"
+    OSCILLATING_LINEAR = "oscillating_linear"
+    COMPLEX_PATH = "complex_path"
+
 class Parameter(BaseModel):
     name: str
     description: str = ""
@@ -34,6 +42,8 @@ class MechanismSchema(BaseModel):
     links: List[LinkSchema]
     joints: List[JointSchema]
     inputs: List[str]  # e.g., name of the driving joint
+    input_type: MotionType
+    output_type: MotionType
     
 class State(BaseModel):
     """Represents a computed state of a mechanism at a specific input."""

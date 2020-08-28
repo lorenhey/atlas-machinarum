@@ -104,13 +104,38 @@
     <h1>Atlas Machinarum</h1>
     <p>A computational atlas of mechanisms and motion.</p>
     
+    <div style="margin-bottom: 20px; padding: 10px; background: #eee; border: 1px solid var(--border);">
+        <label>Filter by Input:</label>
+        <select id="search-input">
+            <option value="">Any</option>
+            <option value="continuous_rotation">Continuous Rotation</option>
+            <option value="oscillating_rotation">Oscillating Rotation</option>
+            <option value="continuous_linear">Continuous Linear</option>
+            <option value="complex_path">Complex Path</option>
+        </select>
+        <label>Filter by Output:</label>
+        <select id="search-output">
+            <option value="">Any</option>
+            <option value="oscillating_linear">Oscillating Linear</option>
+            <option value="oscillating_rotation">Oscillating Rotation</option>
+            <option value="intermittent_rotation">Intermittent Rotation</option>
+            <option value="continuous_rotation">Continuous Rotation</option>
+            <option value="continuous_linear">Continuous Linear</option>
+            <option value="complex_path">Complex Path</option>
+        </select>
+        <button id="btn-search" style="margin-top: 10px;">Search</button>
+    </div>
+    
     <label for="mech-select">Mechanism:</label>
     <select id="mech-select"></select>
     
     <div id="params-container"></div>
     
     <button id="btn-simulate">Compute</button>
+    <button id="btn-compare">Compare (Overlay)</button>
     <button id="btn-play">Play / Pause</button>
+    <button id="btn-export">Export CSV</button>
+    <button id="btn-clear-compare">Clear Compare</button>
     
     <div style="margin-top:20px; font-size: 0.8rem; color: #666;">
         <b>Metrics:</b>
@@ -132,6 +157,8 @@
     const ctx = canvas.getContext('2d');
     
     let pathData = [];
+    let comparePathData = null;
+    let compareMechanism = null;
     let currentIndex = 0;
     let playing = false;
     let animationId = null;
@@ -255,16 +282,24 @@
         // Wait, different mechanisms need different topologies.
         // I will draw all defined points and connect a few logic paths.
         
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#333';
-        
         const mechanism = document.getElementById('mech-select').value;
+        drawMechanism(state.points, mechanism, '#333');
+        
+        if (comparePathData && comparePathData[currentIndex]) {
+            drawMechanism(comparePathData[currentIndex].points, compareMechanism, '#d32f2f');
+        }
+    }
+    
+    function drawMechanism(points, mechanism, color) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        
         if (mechanism === 'slider_crank') {
             drawLine(points.O, points.A);
             drawLine(points.A, points.B);
             drawPoint(points.O, 'O', true);
             drawPoint(points.A, 'A');
-            drawSlider(points.B);
+            drawSlider(points.B, color);
         } else if (mechanism === 'four_bar') {
             drawLine(points.O2, points.A);
             drawLine(points.A, points.B);
@@ -280,7 +315,7 @@
             drawLine(points.O, points.A);
             drawPoint(points.O, 'O', true);
             drawPoint(points.A, 'A');
-            drawYoke(points.YokeCenter, points.A);
+            drawYoke(points.YokeCenter, points.A, color);
         } else if (mechanism === 'geneva') {
             drawLine(points.O2, points.A);
             drawPoint(points.O2, 'O2', true);
@@ -304,6 +339,37 @@
             drawPoint(points.B, 'B');
             drawPoint(points.C, 'C');
             drawPoint(points.P, 'P (Line)');
+        } else if (mechanism === 'chebyshev') {
+            drawLine(points.O2, points.A);
+            drawLine(points.A, points.B);
+            drawLine(points.O4, points.B);
+            drawPoint(points.O2, 'O2', true);
+            drawPoint(points.O4, 'O4', true);
+            drawPoint(points.A, 'A');
+            drawPoint(points.B, 'B');
+            drawPoint(points.P, 'P');
+        } else if (mechanism === 'pantograph') {
+            drawLine(points.O, points.B);
+            drawLine(points.B, points.C_out);
+            drawLine(points.O, points.A); 
+            drawLine(points.A, points.D_in); 
+            drawPoint(points.O, 'O', true);
+            drawPoint(points.D_in, 'Input');
+            drawPoint(points.C_out, 'Output');
+        } else if (mechanism === 'cam_follower') {
+            drawPoint(points.CamCenter, 'Cam', true);
+            drawPoint(points.RollerCenter, 'Roller');
+            drawLine(points.RollerCenter, [points.RollerCenter[0], points.RollerCenter[1] + 0.1]); 
+        } else if (mechanism === 'ratchet') {
+            drawLine(points.LeverPivot, points.Pawl);
+            drawLine(points.CrankCenter, points.CrankEnd);
+            drawLine(points.CrankEnd, points.LeverPivot); 
+            drawPoint(points.LeverPivot, 'Lever', true);
+            drawPoint(points.Pawl, 'Pawl');
+        } else if (mechanism === 'planetary') {
+            drawPoint(points.SunCenter, 'Sun', true);
+            drawPoint(points.PlanetCenter, 'Planet');
+            drawLine(points.SunCenter, points.PlanetCenter); 
         }
     }
     
@@ -332,22 +398,23 @@
         ctx.fillText(label, x + 10, y - 10);
     }
     
-    function drawSlider(p) {
+    function drawSlider(p, color) {
         let x = offsetX + p[0]*scale;
         let y = offsetY - p[1]*scale;
         ctx.fillStyle = '#ddd';
+        ctx.strokeStyle = color || '#333';
         ctx.strokeRect(x - 15, y - 10, 30, 20);
         ctx.fillRect(x - 15, y - 10, 30, 20);
-        ctx.fillStyle = '#111';
+        ctx.fillStyle = color || '#111';
         ctx.fillText("B", x + 20, y - 15);
     }
     
-    function drawYoke(c, p) {
+    function drawYoke(c, p, color) {
         let cx = offsetX + c[0]*scale;
         let cy = offsetY - c[1]*scale;
         let px = offsetX + p[0]*scale;
         let py = offsetY - p[1]*scale;
-        ctx.strokeStyle = '#333';
+        ctx.strokeStyle = color || '#333';
         ctx.strokeRect(cx - 20, py - 40, 40, 80); // Yoke slot
         // Rod
         ctx.beginPath();
@@ -364,6 +431,93 @@
     document.getElementById('btn-play').onclick = () => {
         playing = !playing;
         if (playing) loop();
+    };
+    document.getElementById('btn-export').onclick = async () => {
+        const name = document.getElementById('mech-select').value;
+        const paramInputs = document.querySelectorAll('#params-container input');
+        let params = {};
+        paramInputs.forEach(inp => {
+            params[inp.id.replace('param-', '')] = parseFloat(inp.value);
+        });
+        
+        const res = await fetch(`${API_URL}/export/${name}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(params)
+        });
+        if (!res.ok) {
+            alert("Export failed");
+            return;
+        }
+        const text = await res.text();
+        const blob = new Blob([text], {type: 'text/csv'});
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}_kinematics.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('btn-search').onclick = async () => {
+        const in_type = document.getElementById('search-input').value;
+        const out_type = document.getElementById('search-output').value;
+        let url = `${API_URL}/search?`;
+        if (in_type) url += `input_type=${in_type}&`;
+        if (out_type) url += `output_type=${out_type}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        const select = document.getElementById('mech-select');
+        select.innerHTML = '';
+        data.results.forEach(r => {
+            let opt = document.createElement('option');
+            opt.value = r.name;
+            opt.textContent = r.name;
+            select.appendChild(opt);
+        });
+        
+        if (data.results.length > 0) {
+            // Need to fetch params again since search only returns names
+            const resParams = await fetch(`${API_URL}/mechanisms`);
+            const allParams = await resParams.json();
+            select.onchange = () => buildParams(allParams[select.value]);
+            buildParams(allParams[select.value]);
+            simulate();
+        } else {
+            document.getElementById('params-container').innerHTML = '<p>No results</p>';
+            pathData = [];
+            draw();
+        }
+    };
+    
+    document.getElementById('btn-clear-compare').onclick = () => {
+        comparePathData = null;
+        compareMechanism = null;
+        draw();
+    };
+
+    document.getElementById('btn-compare').onclick = async () => {
+        const name = document.getElementById('mech-select').value;
+        const paramInputs = document.querySelectorAll('#params-container input');
+        let params = {};
+        paramInputs.forEach(inp => {
+            params[inp.id.replace('param-', '')] = parseFloat(inp.value);
+        });
+        
+        const res = await fetch(`${API_URL}/simulate/${name}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(params)
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            comparePathData = data.path;
+            compareMechanism = name;
+            draw();
+        }
     };
     
     function loop() {

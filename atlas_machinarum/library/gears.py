@@ -46,35 +46,54 @@ class GearPair(Mechanism):
 class PlanetaryGear(Mechanism):
     """
     Planetary (Epicyclic) Gear Train.
-    Sun (1), Planet (2), Ring (3), Carrier (c).
-    
     Parameters:
-    - n_sun: number of teeth on sun gear
-    - n_planet: number of teeth on planet gear
-    - n_ring: number of teeth on ring gear (must be n_sun + 2*n_planet for standard spacing)
-    - module: gear module
+    - n_sun: Number of teeth on the sun gear
+    - n_planet: Number of teeth on the planet gear
+    - n_ring: Number of teeth on the ring gear
+    - module: Gear module
     """
-    def __init__(self, n_sun: int, n_planet: int, module: float = 1.0):
-        n_ring = n_sun + 2 * n_planet
+    def __init__(self, n_sun: int = 20, n_planet: int = 20, n_ring: int = 60, module: float = 0.002):
+        # Geometric check: n_ring = n_sun + 2 * n_planet
+        if n_ring != n_sun + 2 * n_planet:
+            raise ValueError("Teeth do not mesh: n_ring must equal n_sun + 2*n_planet")
+            
         super().__init__(n_sun=n_sun, n_planet=n_planet, n_ring=n_ring, module=module)
         self.n_sun = n_sun
         self.n_planet = n_planet
         self.n_ring = n_ring
-        self.m = module
+        self.module = module
         
-        self.r_sun = self.m * self.n_sun / 2.0
-        self.r_planet = self.m * self.n_planet / 2.0
-        self.r_ring = self.m * self.n_ring / 2.0
+        self.r_sun = (self.n_sun * self.module) / 2
+        self.r_planet = (self.n_planet * self.module) / 2
+        self.r_ring = (self.n_ring * self.module) / 2
         self.r_carrier = self.r_sun + self.r_planet
+
+    def solve(self, theta_sun: float, assembly_mode: int = 1) -> State:
+        # Assuming ring gear is fixed (theta_ring = 0)
+        theta_ring = 0.0
         
-    def solve_kinematics(self, omega_sun: float, omega_ring: float, omega_carrier: float) -> State:
-        """
-        Since planetary gear has 2 DOFs, we need two inputs to solve for the third.
-        This method is an example of Willis equation:
-        (omega_sun - omega_carrier) / (omega_ring - omega_carrier) = - n_ring / n_sun
-        """
-        ratio = - self.n_ring / self.n_sun
+        # Willis Equation:
+        ratio = self.n_ring / self.n_sun
+        theta_carrier = (theta_sun + ratio * theta_ring) / (1 + ratio)
         
-        # Determine the missing input (represented by None or NaN, but here we just pass 0 and solve)
-        # We will require user to pass two knowns and one None.
-        pass # To be implemented fully in a more generic solver
+        # Planet gear rotation relative to carrier
+        ratio_sp = self.n_sun / self.n_planet
+        theta_planet = theta_carrier - ratio_sp * (theta_sun - theta_carrier)
+        
+        Cx, Cy = 0.0, 0.0
+        Px = self.r_carrier * np.cos(theta_carrier)
+        Py = self.r_carrier * np.sin(theta_carrier)
+        
+        return State(
+            input_val=theta_sun,
+            points={
+                "SunCenter": (Cx, Cy),
+                "PlanetCenter": (Px, Py)
+            },
+            metrics={
+                "theta_sun": theta_sun,
+                "theta_ring": theta_ring,
+                "theta_carrier": theta_carrier,
+                "theta_planet": theta_planet
+            }
+        )
