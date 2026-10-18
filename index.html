@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATLAS MACHINARUM — Atlas Computacional de Mecanismos y Cinemática</title>
+    
+    <!-- Metadatos de ingeniería y Open Graph -->
+    <meta name="description" content="Atlas computacional y paramétrico de mecanismos planos, eslabonamientos cinemáticos, levas y trenes de engranajes. Solución analítica exacta y simulación interactiva en tiempo real.">
+    <meta name="author" content="Loren">
+    
+    <!-- Fuentes tipográficas técnicas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX para renderizado de fórmulas matemáticas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Estilos CAD Blueprint -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header Superior de Navegación -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">AM</div>
+            <div>
+                <div class="brand-title">ATLAS MACHINARUM</div>
+                <div class="brand-subtitle">Atlas Computacional de Mecanismos y Cinemática Plana</div>
+            </div>
+        </div>
+
+        <nav class="nav-tabs">
+            <button class="nav-btn active" data-tab="tab-workbench">
+                <span>🔬</span> Laboratorio
+            </button>
+            <button class="nav-btn" data-tab="tab-theory">
+                <span>📐</span> Tratado y Ecuaciones
+            </button>
+            <button class="nav-btn" data-tab="tab-matrix">
+                <span>🔄</span> Matriz de Síntesis
+            </button>
+            <button class="nav-btn" data-tab="tab-history">
+                <span>📚</span> Historiografía
+            </button>
+            <button class="nav-btn" data-tab="tab-api">
+                <span>💻</span> API Python
+            </button>
+        </nav>
+
+        <div class="header-actions">
+            <button class="theme-toggle-btn" id="btnToggleTheme">☀️ Claro</button>
+            <a href="https://github.com/lorenhey/atlas-machinarum" target="_blank" class="theme-toggle-btn" style="text-decoration:none; display:flex; align-items:center; gap:5px;">
+                <span>📦</span> GitHub
+            </a>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal de la Aplicación -->
+    <main class="app-container">
+
+        <!-- ==================== TAB 1: LABORATORIO CINEMÁTICO (CAD WORKBENCH) ==================== -->
+        <section class="tab-content active" id="tab-workbench">
+            
+            <!-- Panel Lateral de Parámetros y Diagnóstico -->
+            <aside class="workbench-sidebar">
+                
+                <!-- Selector de Mecanismo -->
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <span>Mecanismo Activo</span>
+                        <span id="mechBadgeDof" class="mech-badge">1 GDL</span>
+                    </div>
+                    <select id="mechSelector" class="mech-selector-select"></select>
+                    <div id="mechBadgeFamily" class="mech-badge" style="margin-top: 8px;">Eslabonamientos Planos</div>
+                </div>
+
+                <!-- Parámetros Geométricos Reactivos -->
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <span>Parámetros de Diseño</span>
+                        <span style="font-size: 0.7rem; color: var(--accent); cursor: pointer;" id="btnResetParams">Valores Base</span>
+                    </div>
+                    <div id="paramsContainer"></div>
+                </div>
+
+                <!-- Telemetría y Métricas en Tiempo Real -->
+                <div class="sidebar-section">
+                    <div class="section-title">Diagnóstico Cinemático en Vivo</div>
+                    <div class="metrics-grid" id="metricsContainer"></div>
+                </div>
+
+                <!-- Herramientas de Análisis y Exportación -->
+                <div class="sidebar-section">
+                    <div class="section-title">Herramientas de Análisis</div>
+                    <button class="btn-action" id="btnSnapshotOverlay" style="width: 100%;">
+                        📸 Fijar Curva Testigo (Comparar)
+                    </button>
+                    <div class="btn-grid">
+                        <button class="btn-action" id="btnExportCSV">
+                            📊 Exportar CSV
+                        </button>
+                        <button class="btn-action" id="btnExportSVG">
+                            📐 Vectorial SVG
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Área de Visualización CAD (Canvas) -->
+            <div class="workbench-viewport">
+                <canvas id="cadCanvas"></canvas>
+
+                <!-- Herramientas de Visualización Flotantes Superiores -->
+                <div class="viewport-tools-top">
+                    <button class="tool-toggle-btn active" id="btnToggleTrajectory">
+                        <span>📈</span> Traza del Acoplador
+                    </button>
+                    <button class="tool-toggle-btn active" id="btnToggleVelocities">
+                        <span>🎯</span> Vectores Velocidad
+                    </button>
+                    <button class="tool-toggle-btn active" id="btnToggleLabels">
+                        <span>🏷️</span> Cotas y Nodos
+                    </button>
+                    <button class="tool-toggle-btn" id="btnResetView">
+                        <span>🔍</span> Centrar Vista
+                    </button>
+                </div>
+
+                <!-- Barra Flotante Inferior de Reproducción y Scrubbing -->
+                <div class="viewport-controls-bottom">
+                    <button class="play-pause-btn" id="btnPlay" title="Pausar / Reanudar (Espacio)">⏸</button>
+                    <button class="btn-action" id="btnResetAngle" style="padding: 4px 8px; font-size: 0.75rem;" title="Reiniciar a 0°">0°</button>
+
+                    <div class="scrub-container">
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ÁNGULO:</span>
+                        <input type="range" class="angle-scrubber" id="angleScrubber" min="0" max="360" value="0">
+                        <span class="angle-readout" id="angleReadout">0°</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">VEL:</span>
+                        <select class="speed-select" id="speedSelector">
+                            <option value="0.25">0.25×</option>
+                            <option value="0.5">0.5×</option>
+                            <option value="1.0" selected>1.0×</option>
+                            <option value="2.0">2.0×</option>
+                            <option value="3.0">3.0×</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: TRATADO Y ECUACIONES ==================== -->
+        <section class="tab-content" id="tab-theory">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Tratado de Cinemática Analítica de Mecanismos Planos</h1>
+                    <p>Fundamentos matemáticos, ecuaciones de lazo vectorial, condiciones de Grashof, ángulos de transmisión y métodos de síntesis analítica en ingeniería mecánica.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Criterio de Grübler-Kutzbach para Grados de Libertad</h2>
+                    <p>La movilidad o número de grados de libertad ($M$) de un mecanismo plano compuesto por $n$ eslabones rígidos conectados mediante $j_1$ pares cinemáticos inferiores de un grado de libertad (revolución $R$ o prismáticos $P$) y $j_2$ pares cinemáticos superiores de dos grados de libertad (contacto de rodadura pura o leva-seguidor) se formula estrictamente mediante la ecuación de Kutzbach:</p>
+                    
+                    <div class="math-block">
+                        $$M = 3(n - 1) - 2 j_1 - j_2$$
+                    </div>
+
+                    <p>Para un eslabonamiento de cuatro barras elemental ($n = 4$ eslabones, $j_1 = 4$ articulaciones de pasador, $j_2 = 0$):</p>
+                    <div class="math-block">
+                        $$M = 3(4 - 1) - 2(4) - 0 = 9 - 8 = 1$$
+                    </div>
+                    <p>Esto demuestra que basta especificar una única coordenada independiente (típicamente el ángulo de la manivela motriz $\theta_2$) para determinar de manera unívoca la posición, velocidad y aceleración de todos los demás componentes del sistema.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Ley de Grashof y Clasificación de Eslabonamientos</h2>
+                    <p>Para un cuadrilátero articulado plano de cuatro barras con longitudes ordenadas $s \le p \le q \le l$, donde $s$ es el eslabón más corto y $l$ es el más largo:</p>
+                    <div class="math-block">
+                        $$s + l \le p + q$$
+                    </div>
+                    <ul>
+                        <li><strong>Si $s + l < p + q$ (Clase I de Grashof)</strong>: Al menos un eslabón puede describir una rotación continua completa de $360^\circ$.
+                            <ul>
+                                <li><strong>Manivela-Balancín</strong>: El eslabón más corto $s$ es la manivela de entrada acoplada a la bancada.</li>
+                                <li><strong>Doble Manivela (Drag-Link)</strong>: El eslabón más corto $s$ es la bancada fija; ambos eslabones laterales completan giros continuos.</li>
+                                <li><strong>Doble Balancín de Grashof</strong>: El eslabón más corto $s$ es el acoplador flotante; ninguno de los dos eslabones pivotados a tierra gira $360^\circ$.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Si $s + l = p + q$ (Clase de Punto de Cambio)</strong>: Existen configuraciones singulares donde todos los eslabones quedan colineales (riesgo de indeterminación de bifurcación).</li>
+                        <li><strong>Si $s + l > p + q$ (Clase II - No-Grashof)</strong>: Ningún eslabón es capaz de girar $360^\circ$ de manera continua; todos los eslabones actúan como balancines oscilantes entre límites geométricos extremos.</li>
+                    </ul>
+                </div>
+
+                <!-- Contenedor dinámico de artículos por mecanismo -->
+                <div id="theoryArticles"></div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: MATRIZ DE TRANSFORMACIÓN CINEMÁTICA ==================== -->
+        <section class="tab-content" id="tab-matrix">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Matriz de Síntesis de Movimiento</h1>
+                    <p>Mapa de ingeniería para seleccionar mecanismos en función del tipo de movimiento de entrada disponible y el movimiento de salida requerido. Hacé clic en cualquier mecanismo para cargarlo en el laboratorio.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Taxonomía de Transformación Cinemática</h2>
+                    <p>En el diseño mecánico de maquinaria industrial y de procesos, el problema inverso o de síntesis parte de la especificación cinemática de la carga. La siguiente matriz formaliza la selección óptima:</p>
+
+                    <table class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Movimiento de Entrada</th>
+                                <th>Movimiento de Salida</th>
+                                <th>Mecanismos Disponibles</th>
+                                <th>Criterio de Ingeniería y Distinción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: HISTORIOGRAFÍA Y LINAJE INDUSTRIAL ==================== -->
+        <section class="tab-content" id="tab-history">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Historiografía y Genealogía de la Mecánica</h1>
+                    <p>Evolución de los mecanismos desde la antigüedad clásica y el Renacimiento hasta la cinemática analítica moderna de Reuleaux y Freudenstein.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>1. El Nacimiento de la Biela-Manivela y la Transformación del Movimiento</h2>
+                    <p>La conversión cinemática entre movimiento rotativo continuo y vaivén alternativo marca la frontera entre la herramienta manual y la máquina autómata. El testimonio arqueológico e ingenieril más antiguo de un mecanismo de biela-manivela con transmisión por engranajes se encuentra en el aserradero hidráulico romano de Hierápolis (Frigia, actual Turquía), datado en la segunda mitad del siglo III d.C. En él, una rueda hidráulica movía una manivela que, mediante bielas de madera y bronce, accionaba dos sierras alternativas de vaivén para cortar bloques de mármol.</p>
+                    <p>Durante la Edad de Oro del Islam, el polímata e ingeniero Al-Jazari (1206) en su monumental <em>Kitāb fī ma'rifat al-hiyal al-handasiyya</em> (El libro del conocimiento de los dispositivos mecánicos ingeniosos) formalizó la biela-manivela para bombas hidráulicas de doble efecto con válvulas de retención cónicas, adelantándose en más de dos siglos a los cuadernos de Francesco di Giorgio Martini y Leonardo da Vinci.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>2. La Búsqueda de la Línea Recta: De Watt a Peaucellier</h2>
+                    <p>En el siglo XVIII, la fabricación de cilindros de vapor de gran diámetro presentaba una limitación crítica: no existían máquinas herramientas capaces de mecanizar guías prismáticas (correderas) de acero perfectamente planas y con suficiente resistencia al desgaste por fricción.</p>
+                    <p>James Watt se vio obligado a inventar en 1784 el <em>paralelogramo articulado de Watt</em> para guiar el vástago del émbolo en línea casi recta mediante articulaciones giratorias puras (las cuales podían ser torneadas y pulidas con excelente precisión en un torno simple). Watt escribió a su hijo:</p>
+                    <blockquote style="border-left: 3px solid var(--accent); padding-left: 15px; margin: 15px 0; font-style: italic; color: var(--text-muted);">
+                        "Aunque no me enorgullezco fácilmente de nada de lo que he hecho, estoy más orgulloso del movimiento de línea recta que de cualquier otra invención mecánica que haya concebido."
+                    </blockquote>
+                    <p>No obstante, la solución de Watt era una aproximación basada en el punto de inflexión de una curva lemniscata de quinto grado. Durante ocho décadas, la comunidad matemática debatió si era posible generar una línea recta <strong>matemáticamente exacta</strong> empleando exclusivamente juntas de revolución (pasadores cilíndricos). La respuesta afirmativa llegó en 1864 con Charles-Nicolas Peaucellier y en 1870 con Yom Tov Lipkin, demostrando el poder de la geometría proyectiva e inversión circular en el diseño de mecanismos.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>3. Franz Reuleaux y la Cinemática como Ciencia Rigurosa</h2>
+                    <p>En 1876, el ingeniero y profesor alemán Franz Reuleaux publicó su obra cumbre <em>Theoretische Kinematik: Grundzüge einer Theorie des Maschinenwesens</em>. Reuleaux revolucionó la ingeniería al independizar el estudio de las máquinas de la dinámica de fuerzas:</p>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>Definió el <strong>par cinemático</strong> como la restricción geométrica mutua de dos cuerpos rígidos en contacto.</li>
+                        <li>Clasificó los pares en <em>inferiores</em> (contacto de superficie: revolución, prismático, helicoidal) y <em>superiores</em> (contacto de línea o punto: levas, engranajes).</li>
+                        <li>Estableció la noción de <strong>cadena cinemática cerrada</strong> y la <strong>inversión cinemática</strong> (fijar distintos eslabones de una misma cadena para obtener mecanismos funcionalmente diversos).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: API PYTHON Y CÓDIGO ==================== -->
+        <section class="tab-content" id="tab-api">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Biblioteca Científica en Python (API)</h1>
+                    <p>Uso de <code>atlas_machinarum</code> como paquete de Python para simulación numérica, verificación cinemática y análisis de Grashof en entornos de ingeniería.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Instalación del Paquete</h2>
+                    <p>El código fuente de <strong>Atlas Machinarum</strong> está estructurado como una biblioteca estándar de Python con soporte para CLI:</p>
+                    <pre class="code-block">git clone https://github.com/lorenhey/atlas-machinarum.git
+cd atlas-machinarum
+pip install -e .</pre>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Ejemplo: Análisis Cinemático de Cuatro Barras</h2>
+                    <pre class="code-block">import numpy as np
+from atlas_machinarum.library import FourBar
+
+# Instanciar mecanismo de 4 barras:
+# ground=0.20 m, crank=0.05 m, coupler=0.15 m, rocker=0.15 m
+fb = FourBar(ground=0.20, crank=0.05, coupler=0.15, rocker=0.15, cp_length=0.10, cp_angle=0.5)
+
+# Diagnosticar condición de Grashof
+print("Condición de Grashof:", fb.grashof_condition())
+# Salida: CRANK_ROCKER
+
+# Resolver estado cinemático para un ángulo de manivela theta2 = pi/4 (45°)
+state = fb.solve(theta2=np.pi / 4)
+
+print("Coordenadas articulación A (manivela):", state.points["A"])
+print("Coordenadas articulación B (balancín):", state.points["B"])
+print("Punto del acoplador P:", state.points["P"])
+print("Ángulo de transmisión (rad):", state.metrics["transmission_angle"])</pre>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Biela-Manivela y Verificación de Puntos Muertos</h2>
+                    <pre class="code-block">from atlas_machinarum.library import SliderCrank
+import numpy as np
+
+# Definir biela-manivela centrada (offset = 0)
+sc = SliderCrank(crank=0.05, rod=0.20, offset=0.0)
+
+# Punto muerto superior (theta = 0)
+pms = sc.solve(0.0)
+print("Posición PMS:", pms.points["B"][0]) # R + L = 0.25 m
+
+# Punto muerto inferior (theta = pi)
+pmi = sc.solve(np.pi)
+print("Posición PMI:", pmi.points["B"][0]) # L - R = 0.15 m
+print("Carrera total:", pms.points["B"][0] - pmi.points["B"][0]) # 2 * R = 0.10 m</pre>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Ejecución de la Suite de Pruebas Automatizadas</h2>
+                    <pre class="code-block">pytest</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Script Principal de la Aplicación -->
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

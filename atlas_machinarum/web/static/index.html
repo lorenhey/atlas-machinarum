@@ -1,557 +1,338 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATLAS MACHINARUM</title>
-    <style>
-        :root {
-            --bg: #fafafa;
-            --text: #111;
-            --accent: #d32f2f;
-            --line: #444;
-            --construction: #aaa;
-            --panel: #fff;
-            --border: #ccc;
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Courier New', Courier, monospace;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #sidebar {
-            width: 350px;
-            background: var(--panel);
-            border-right: 1px solid var(--border);
-            padding: 20px;
-            overflow-y: auto;
-            box-sizing: border-box;
-        }
-        #main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        canvas {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(var(--border) 1px, transparent 1px),
-                              linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 50px 50px;
-            background-position: center center;
-            opacity: 0.8;
-        }
-        h1 {
-            font-size: 1.5rem;
-            margin-top: 0;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--text);
-            padding-bottom: 5px;
-        }
-        h2 {
-            font-size: 1.1rem;
-            margin-top: 20px;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-        input, select {
-            width: 100%;
-            padding: 5px;
-            margin-top: 5px;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-        button {
-            margin-top: 20px;
-            width: 100%;
-            padding: 10px;
-            background: var(--text);
-            color: var(--bg);
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: bold;
-        }
-        button:hover {
-            background: var(--accent);
-        }
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border: 1px solid var(--border);
-        }
-        input[type="range"] {
-            width: 300px;
-        }
-    </style>
+    <title>ATLAS MACHINARUM — Atlas Computacional de Mecanismos y Cinemática</title>
+    
+    <!-- Metadatos de ingeniería y Open Graph -->
+    <meta name="description" content="Atlas computacional y paramétrico de mecanismos planos, eslabonamientos cinemáticos, levas y trenes de engranajes. Solución analítica exacta y simulación interactiva en tiempo real.">
+    <meta name="author" content="Loren">
+    
+    <!-- Fuentes tipográficas técnicas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX para renderizado de fórmulas matemáticas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Estilos CAD Blueprint -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div id="sidebar">
-    <h1>Atlas Machinarum</h1>
-    <p>A computational atlas of mechanisms and motion.</p>
-    
-    <div style="margin-bottom: 20px; padding: 10px; background: #eee; border: 1px solid var(--border);">
-        <label>Filter by Input:</label>
-        <select id="search-input">
-            <option value="">Any</option>
-            <option value="continuous_rotation">Continuous Rotation</option>
-            <option value="oscillating_rotation">Oscillating Rotation</option>
-            <option value="continuous_linear">Continuous Linear</option>
-            <option value="complex_path">Complex Path</option>
-        </select>
-        <label>Filter by Output:</label>
-        <select id="search-output">
-            <option value="">Any</option>
-            <option value="oscillating_linear">Oscillating Linear</option>
-            <option value="oscillating_rotation">Oscillating Rotation</option>
-            <option value="intermittent_rotation">Intermittent Rotation</option>
-            <option value="continuous_rotation">Continuous Rotation</option>
-            <option value="continuous_linear">Continuous Linear</option>
-            <option value="complex_path">Complex Path</option>
-        </select>
-        <button id="btn-search" style="margin-top: 10px;">Search</button>
-    </div>
-    
-    <label for="mech-select">Mechanism:</label>
-    <select id="mech-select"></select>
-    
-    <div id="params-container"></div>
-    
-    <button id="btn-simulate">Compute</button>
-    <button id="btn-compare">Compare (Overlay)</button>
-    <button id="btn-play">Play / Pause</button>
-    <button id="btn-export">Export CSV</button>
-    <button id="btn-clear-compare">Clear Compare</button>
-    
-    <div style="margin-top:20px; font-size: 0.8rem; color: #666;">
-        <b>Metrics:</b>
-        <pre id="metrics-display"></pre>
-    </div>
-</div>
+    <!-- Header Superior de Navegación -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">AM</div>
+            <div>
+                <div class="brand-title">ATLAS MACHINARUM</div>
+                <div class="brand-subtitle">Atlas Computacional de Mecanismos y Cinemática Plana</div>
+            </div>
+        </div>
 
-<div id="main">
-    <canvas id="canvas"></canvas>
-    <div id="controls">
-        <label>Input Angle: <span id="angle-val">0</span></label>
-        <input type="range" id="angle-slider" min="0" max="99" value="0">
-    </div>
-</div>
+        <nav class="nav-tabs">
+            <button class="nav-btn active" data-tab="tab-workbench">
+                <span>🔬</span> Laboratorio
+            </button>
+            <button class="nav-btn" data-tab="tab-theory">
+                <span>📐</span> Tratado y Ecuaciones
+            </button>
+            <button class="nav-btn" data-tab="tab-matrix">
+                <span>🔄</span> Matriz de Síntesis
+            </button>
+            <button class="nav-btn" data-tab="tab-history">
+                <span>📚</span> Historiografía
+            </button>
+            <button class="nav-btn" data-tab="tab-api">
+                <span>💻</span> API Python
+            </button>
+        </nav>
 
-<script>
-    const API_URL = "http://localhost:8000/api";
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    let pathData = [];
-    let comparePathData = null;
-    let compareMechanism = null;
-    let currentIndex = 0;
-    let playing = false;
-    let animationId = null;
-    let scale = 1000; // pixels per unit
-    let offsetX = canvas.width / 2;
-    let offsetY = canvas.height / 2;
+        <div class="header-actions">
+            <button class="theme-toggle-btn" id="btnToggleTheme">☀️ Claro</button>
+            <a href="https://github.com/lorenhey/atlas-machinarum" target="_blank" class="theme-toggle-btn" style="text-decoration:none; display:flex; align-items:center; gap:5px;">
+                <span>📦</span> GitHub
+            </a>
+        </div>
+    </header>
 
-    function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-        offsetX = canvas.width / 2;
-        offsetY = canvas.height / 2;
-        draw();
-    }
-    window.addEventListener('resize', resize);
-    
-    async function loadMechanisms() {
-        const res = await fetch(`${API_URL}/mechanisms`);
-        const data = await res.json();
-        const select = document.getElementById('mech-select');
-        select.innerHTML = '';
-        for (let name in data) {
-            let opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = name;
-            select.appendChild(opt);
-        }
-        select.onchange = () => buildParams(data[select.value]);
-        
-        // Initial build
-        buildParams(data[select.value]);
-        simulate();
-    }
-    
-    function buildParams(params) {
-        const container = document.getElementById('params-container');
-        container.innerHTML = '<h2>Parameters</h2>';
-        for (let key in params) {
-            let label = document.createElement('label');
-            label.textContent = key;
-            let input = document.createElement('input');
-            input.type = 'number';
-            input.step = '0.001';
-            input.value = params[key];
-            input.id = `param-${key}`;
-            container.appendChild(label);
-            container.appendChild(input);
-        }
-    }
-    
-    async function simulate() {
-        const select = document.getElementById('mech-select');
-        const name = select.value;
-        const paramInputs = document.querySelectorAll('#params-container input');
-        let params = {};
-        paramInputs.forEach(inp => {
-            params[inp.id.replace('param-', '')] = parseFloat(inp.value);
-        });
-        
-        const res = await fetch(`${API_URL}/simulate/${name}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(params)
-        });
-        
-        if (!res.ok) {
-            const err = await res.json();
-            alert("Error: " + err.detail);
-            return;
-        }
-        
-        const data = await res.json();
-        pathData = data.path;
-        currentIndex = 0;
-        document.getElementById('angle-slider').max = pathData.length - 1;
-        document.getElementById('angle-slider').value = 0;
-        draw();
-    }
-    
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        if (pathData.length === 0) return;
-        
-        // Draw origin lines
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(offsetX, 0);
-        ctx.lineTo(offsetX, canvas.height);
-        ctx.moveTo(0, offsetY);
-        ctx.lineTo(canvas.width, offsetY);
-        ctx.stroke();
-        
-        // Draw coupler curve if P exists
-        if (pathData[0].points.P) {
-            ctx.strokeStyle = '#aaa';
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            for (let i=0; i<pathData.length; i++) {
-                let p = pathData[i].points.P;
-                let x = offsetX + p[0] * scale;
-                let y = offsetY - p[1] * scale;
-                if (i===0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-        
-        // Current state
-        const state = pathData[currentIndex];
-        document.getElementById('angle-val').textContent = state.input.toFixed(2);
-        document.getElementById('metrics-display').textContent = JSON.stringify(state.metrics, null, 2);
-        
-        const points = state.points;
-        const ptsArray = Object.values(points).map(p => ({x: offsetX + p[0]*scale, y: offsetY - p[1]*scale}));
-        const keys = Object.keys(points);
-        
-        // Very basic drawing logic: connect points in order they are defined for now.
-        // Wait, different mechanisms need different topologies.
-        // I will draw all defined points and connect a few logic paths.
-        
-        const mechanism = document.getElementById('mech-select').value;
-        drawMechanism(state.points, mechanism, '#333');
-        
-        if (comparePathData && comparePathData[currentIndex]) {
-            drawMechanism(comparePathData[currentIndex].points, compareMechanism, '#d32f2f');
-        }
-    }
-    
-    function drawMechanism(points, mechanism, color) {
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = color;
-        
-        if (mechanism === 'slider_crank') {
-            drawLine(points.O, points.A);
-            drawLine(points.A, points.B);
-            drawPoint(points.O, 'O', true);
-            drawPoint(points.A, 'A');
-            drawSlider(points.B, color);
-        } else if (mechanism === 'four_bar') {
-            drawLine(points.O2, points.A);
-            drawLine(points.A, points.B);
-            drawLine(points.O4, points.B);
-            drawLine(points.A, points.P);
-            drawLine(points.B, points.P);
-            drawPoint(points.O2, 'O2', true);
-            drawPoint(points.O4, 'O4', true);
-            drawPoint(points.A, 'A');
-            drawPoint(points.B, 'B');
-            drawPoint(points.P, 'P');
-        } else if (mechanism === 'scotch_yoke') {
-            drawLine(points.O, points.A);
-            drawPoint(points.O, 'O', true);
-            drawPoint(points.A, 'A');
-            drawYoke(points.YokeCenter, points.A, color);
-        } else if (mechanism === 'geneva') {
-            drawLine(points.O2, points.A);
-            drawPoint(points.O2, 'O2', true);
-            drawPoint(points.O3, 'O3', true);
-            drawPoint(points.A, 'A');
-            drawPoint(points.B, 'Slot Edge');
-        } else if (mechanism === 'gears') {
-            drawPoint(points.O1, 'O1', true);
-            drawPoint(points.O2, 'O2', true);
-        } else if (mechanism === 'peaucellier') {
-            drawLine(points.O, points.B);
-            drawLine(points.O, points.C);
-            drawLine(points["O'"], points.A);
-            drawLine(points.A, points.B);
-            drawLine(points.B, points.P);
-            drawLine(points.P, points.C);
-            drawLine(points.C, points.A);
-            drawPoint(points.O, 'O', true);
-            drawPoint(points["O'"], "O'", true);
-            drawPoint(points.A, 'A');
-            drawPoint(points.B, 'B');
-            drawPoint(points.C, 'C');
-            drawPoint(points.P, 'P (Line)');
-        } else if (mechanism === 'chebyshev') {
-            drawLine(points.O2, points.A);
-            drawLine(points.A, points.B);
-            drawLine(points.O4, points.B);
-            drawPoint(points.O2, 'O2', true);
-            drawPoint(points.O4, 'O4', true);
-            drawPoint(points.A, 'A');
-            drawPoint(points.B, 'B');
-            drawPoint(points.P, 'P');
-        } else if (mechanism === 'pantograph') {
-            drawLine(points.O, points.B);
-            drawLine(points.B, points.C_out);
-            drawLine(points.O, points.A); 
-            drawLine(points.A, points.D_in); 
-            drawPoint(points.O, 'O', true);
-            drawPoint(points.D_in, 'Input');
-            drawPoint(points.C_out, 'Output');
-        } else if (mechanism === 'cam_follower') {
-            drawPoint(points.CamCenter, 'Cam', true);
-            drawPoint(points.RollerCenter, 'Roller');
-            drawLine(points.RollerCenter, [points.RollerCenter[0], points.RollerCenter[1] + 0.1]); 
-        } else if (mechanism === 'ratchet') {
-            drawLine(points.LeverPivot, points.Pawl);
-            drawLine(points.CrankCenter, points.CrankEnd);
-            drawLine(points.CrankEnd, points.LeverPivot); 
-            drawPoint(points.LeverPivot, 'Lever', true);
-            drawPoint(points.Pawl, 'Pawl');
-        } else if (mechanism === 'planetary') {
-            drawPoint(points.SunCenter, 'Sun', true);
-            drawPoint(points.PlanetCenter, 'Planet');
-            drawLine(points.SunCenter, points.PlanetCenter); 
-        }
-    }
-    
-    function drawLine(p1, p2) {
-        if (!p1 || !p2) return;
-        ctx.beginPath();
-        ctx.moveTo(offsetX + p1[0]*scale, offsetY - p1[1]*scale);
-        ctx.lineTo(offsetX + p2[0]*scale, offsetY - p2[1]*scale);
-        ctx.stroke();
-    }
-    
-    function drawPoint(p, label, isGround=false) {
-        if (!p) return;
-        let x = offsetX + p[0]*scale;
-        let y = offsetY - p[1]*scale;
-        ctx.fillStyle = isGround ? '#d32f2f' : '#fff';
-        ctx.strokeStyle = '#111';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI*2);
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.fillStyle = '#111';
-        ctx.font = '12px Courier';
-        ctx.fillText(label, x + 10, y - 10);
-    }
-    
-    function drawSlider(p, color) {
-        let x = offsetX + p[0]*scale;
-        let y = offsetY - p[1]*scale;
-        ctx.fillStyle = '#ddd';
-        ctx.strokeStyle = color || '#333';
-        ctx.strokeRect(x - 15, y - 10, 30, 20);
-        ctx.fillRect(x - 15, y - 10, 30, 20);
-        ctx.fillStyle = color || '#111';
-        ctx.fillText("B", x + 20, y - 15);
-    }
-    
-    function drawYoke(c, p, color) {
-        let cx = offsetX + c[0]*scale;
-        let cy = offsetY - c[1]*scale;
-        let px = offsetX + p[0]*scale;
-        let py = offsetY - p[1]*scale;
-        ctx.strokeStyle = color || '#333';
-        ctx.strokeRect(cx - 20, py - 40, 40, 80); // Yoke slot
-        // Rod
-        ctx.beginPath();
-        ctx.moveTo(cx + 20, cy);
-        ctx.lineTo(cx + 100, cy);
-        ctx.stroke();
-    }
+    <!-- Contenedor Principal de la Aplicación -->
+    <main class="app-container">
 
-    document.getElementById('btn-simulate').onclick = simulate;
-    document.getElementById('angle-slider').oninput = (e) => {
-        currentIndex = parseInt(e.target.value);
-        draw();
-    };
-    document.getElementById('btn-play').onclick = () => {
-        playing = !playing;
-        if (playing) loop();
-    };
-    document.getElementById('btn-export').onclick = async () => {
-        const name = document.getElementById('mech-select').value;
-        const paramInputs = document.querySelectorAll('#params-container input');
-        let params = {};
-        paramInputs.forEach(inp => {
-            params[inp.id.replace('param-', '')] = parseFloat(inp.value);
-        });
-        
-        const res = await fetch(`${API_URL}/export/${name}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(params)
-        });
-        if (!res.ok) {
-            alert("Export failed");
-            return;
-        }
-        const text = await res.text();
-        const blob = new Blob([text], {type: 'text/csv'});
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${name}_kinematics.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-    };
+        <!-- ==================== TAB 1: LABORATORIO CINEMÁTICO (CAD WORKBENCH) ==================== -->
+        <section class="tab-content active" id="tab-workbench">
+            
+            <!-- Panel Lateral de Parámetros y Diagnóstico -->
+            <aside class="workbench-sidebar">
+                
+                <!-- Selector de Mecanismo -->
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <span>Mecanismo Activo</span>
+                        <span id="mechBadgeDof" class="mech-badge">1 GDL</span>
+                    </div>
+                    <select id="mechSelector" class="mech-selector-select"></select>
+                    <div id="mechBadgeFamily" class="mech-badge" style="margin-top: 8px;">Eslabonamientos Planos</div>
+                </div>
 
-    document.getElementById('btn-search').onclick = async () => {
-        const in_type = document.getElementById('search-input').value;
-        const out_type = document.getElementById('search-output').value;
-        let url = `${API_URL}/search?`;
-        if (in_type) url += `input_type=${in_type}&`;
-        if (out_type) url += `output_type=${out_type}`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        const select = document.getElementById('mech-select');
-        select.innerHTML = '';
-        data.results.forEach(r => {
-            let opt = document.createElement('option');
-            opt.value = r.name;
-            opt.textContent = r.name;
-            select.appendChild(opt);
-        });
-        
-        if (data.results.length > 0) {
-            // Need to fetch params again since search only returns names
-            const resParams = await fetch(`${API_URL}/mechanisms`);
-            const allParams = await resParams.json();
-            select.onchange = () => buildParams(allParams[select.value]);
-            buildParams(allParams[select.value]);
-            simulate();
-        } else {
-            document.getElementById('params-container').innerHTML = '<p>No results</p>';
-            pathData = [];
-            draw();
-        }
-    };
-    
-    document.getElementById('btn-clear-compare').onclick = () => {
-        comparePathData = null;
-        compareMechanism = null;
-        draw();
-    };
+                <!-- Parámetros Geométricos Reactivos -->
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <span>Parámetros de Diseño</span>
+                        <span style="font-size: 0.7rem; color: var(--accent); cursor: pointer;" id="btnResetParams">Valores Base</span>
+                    </div>
+                    <div id="paramsContainer"></div>
+                </div>
 
-    document.getElementById('btn-compare').onclick = async () => {
-        const name = document.getElementById('mech-select').value;
-        const paramInputs = document.querySelectorAll('#params-container input');
-        let params = {};
-        paramInputs.forEach(inp => {
-            params[inp.id.replace('param-', '')] = parseFloat(inp.value);
-        });
-        
-        const res = await fetch(`${API_URL}/simulate/${name}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(params)
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            comparePathData = data.path;
-            compareMechanism = name;
-            draw();
-        }
-    };
-    
-    function loop() {
-        if (!playing) return;
-        currentIndex = (currentIndex + 1) % pathData.length;
-        document.getElementById('angle-slider').value = currentIndex;
-        draw();
-        setTimeout(loop, 30);
-    }
-    
-    // Zoom/Pan
-    let isDragging = false;
-    let lastX = 0, lastY = 0;
-    canvas.onmousedown = e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; };
-    canvas.onmouseup = () => isDragging = false;
-    canvas.onmousemove = e => {
-        if (!isDragging) return;
-        offsetX += e.clientX - lastX;
-        offsetY += e.clientY - lastY;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        draw();
-    };
-    canvas.onwheel = e => {
-        e.preventDefault();
-        const factor = e.deltaY > 0 ? 0.9 : 1.1;
-        // Keep origin stationary if mouse at center, else move it slightly. For simplicity, just scale around origin.
-        scale *= factor;
-        draw();
-    };
+                <!-- Telemetría y Métricas en Tiempo Real -->
+                <div class="sidebar-section">
+                    <div class="section-title">Diagnóstico Cinemático en Vivo</div>
+                    <div class="metrics-grid" id="metricsContainer"></div>
+                </div>
 
-    // Init
-    resize();
-    loadMechanisms();
-</script>
+                <!-- Herramientas de Análisis y Exportación -->
+                <div class="sidebar-section">
+                    <div class="section-title">Herramientas de Análisis</div>
+                    <button class="btn-action" id="btnSnapshotOverlay" style="width: 100%;">
+                        📸 Fijar Curva Testigo (Comparar)
+                    </button>
+                    <div class="btn-grid">
+                        <button class="btn-action" id="btnExportCSV">
+                            📊 Exportar CSV
+                        </button>
+                        <button class="btn-action" id="btnExportSVG">
+                            📐 Vectorial SVG
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Área de Visualización CAD (Canvas) -->
+            <div class="workbench-viewport">
+                <canvas id="cadCanvas"></canvas>
+
+                <!-- Herramientas de Visualización Flotantes Superiores -->
+                <div class="viewport-tools-top">
+                    <button class="tool-toggle-btn active" id="btnToggleTrajectory">
+                        <span>📈</span> Traza del Acoplador
+                    </button>
+                    <button class="tool-toggle-btn active" id="btnToggleVelocities">
+                        <span>🎯</span> Vectores Velocidad
+                    </button>
+                    <button class="tool-toggle-btn active" id="btnToggleLabels">
+                        <span>🏷️</span> Cotas y Nodos
+                    </button>
+                    <button class="tool-toggle-btn" id="btnResetView">
+                        <span>🔍</span> Centrar Vista
+                    </button>
+                </div>
+
+                <!-- Barra Flotante Inferior de Reproducción y Scrubbing -->
+                <div class="viewport-controls-bottom">
+                    <button class="play-pause-btn" id="btnPlay" title="Pausar / Reanudar (Espacio)">⏸</button>
+                    <button class="btn-action" id="btnResetAngle" style="padding: 4px 8px; font-size: 0.75rem;" title="Reiniciar a 0°">0°</button>
+
+                    <div class="scrub-container">
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ÁNGULO:</span>
+                        <input type="range" class="angle-scrubber" id="angleScrubber" min="0" max="360" value="0">
+                        <span class="angle-readout" id="angleReadout">0°</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">VEL:</span>
+                        <select class="speed-select" id="speedSelector">
+                            <option value="0.25">0.25×</option>
+                            <option value="0.5">0.5×</option>
+                            <option value="1.0" selected>1.0×</option>
+                            <option value="2.0">2.0×</option>
+                            <option value="3.0">3.0×</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: TRATADO Y ECUACIONES ==================== -->
+        <section class="tab-content" id="tab-theory">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Tratado de Cinemática Analítica de Mecanismos Planos</h1>
+                    <p>Fundamentos matemáticos, ecuaciones de lazo vectorial, condiciones de Grashof, ángulos de transmisión y métodos de síntesis analítica en ingeniería mecánica.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Criterio de Grübler-Kutzbach para Grados de Libertad</h2>
+                    <p>La movilidad o número de grados de libertad ($M$) de un mecanismo plano compuesto por $n$ eslabones rígidos conectados mediante $j_1$ pares cinemáticos inferiores de un grado de libertad (revolución $R$ o prismáticos $P$) y $j_2$ pares cinemáticos superiores de dos grados de libertad (contacto de rodadura pura o leva-seguidor) se formula estrictamente mediante la ecuación de Kutzbach:</p>
+                    
+                    <div class="math-block">
+                        $$M = 3(n - 1) - 2 j_1 - j_2$$
+                    </div>
+
+                    <p>Para un eslabonamiento de cuatro barras elemental ($n = 4$ eslabones, $j_1 = 4$ articulaciones de pasador, $j_2 = 0$):</p>
+                    <div class="math-block">
+                        $$M = 3(4 - 1) - 2(4) - 0 = 9 - 8 = 1$$
+                    </div>
+                    <p>Esto demuestra que basta especificar una única coordenada independiente (típicamente el ángulo de la manivela motriz $\theta_2$) para determinar de manera unívoca la posición, velocidad y aceleración de todos los demás componentes del sistema.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Ley de Grashof y Clasificación de Eslabonamientos</h2>
+                    <p>Para un cuadrilátero articulado plano de cuatro barras con longitudes ordenadas $s \le p \le q \le l$, donde $s$ es el eslabón más corto y $l$ es el más largo:</p>
+                    <div class="math-block">
+                        $$s + l \le p + q$$
+                    </div>
+                    <ul>
+                        <li><strong>Si $s + l < p + q$ (Clase I de Grashof)</strong>: Al menos un eslabón puede describir una rotación continua completa de $360^\circ$.
+                            <ul>
+                                <li><strong>Manivela-Balancín</strong>: El eslabón más corto $s$ es la manivela de entrada acoplada a la bancada.</li>
+                                <li><strong>Doble Manivela (Drag-Link)</strong>: El eslabón más corto $s$ es la bancada fija; ambos eslabones laterales completan giros continuos.</li>
+                                <li><strong>Doble Balancín de Grashof</strong>: El eslabón más corto $s$ es el acoplador flotante; ninguno de los dos eslabones pivotados a tierra gira $360^\circ$.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Si $s + l = p + q$ (Clase de Punto de Cambio)</strong>: Existen configuraciones singulares donde todos los eslabones quedan colineales (riesgo de indeterminación de bifurcación).</li>
+                        <li><strong>Si $s + l > p + q$ (Clase II - No-Grashof)</strong>: Ningún eslabón es capaz de girar $360^\circ$ de manera continua; todos los eslabones actúan como balancines oscilantes entre límites geométricos extremos.</li>
+                    </ul>
+                </div>
+
+                <!-- Contenedor dinámico de artículos por mecanismo -->
+                <div id="theoryArticles"></div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: MATRIZ DE TRANSFORMACIÓN CINEMÁTICA ==================== -->
+        <section class="tab-content" id="tab-matrix">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Matriz de Síntesis de Movimiento</h1>
+                    <p>Mapa de ingeniería para seleccionar mecanismos en función del tipo de movimiento de entrada disponible y el movimiento de salida requerido. Hacé clic en cualquier mecanismo para cargarlo en el laboratorio.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Taxonomía de Transformación Cinemática</h2>
+                    <p>En el diseño mecánico de maquinaria industrial y de procesos, el problema inverso o de síntesis parte de la especificación cinemática de la carga. La siguiente matriz formaliza la selección óptima:</p>
+
+                    <table class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Movimiento de Entrada</th>
+                                <th>Movimiento de Salida</th>
+                                <th>Mecanismos Disponibles</th>
+                                <th>Criterio de Ingeniería y Distinción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: HISTORIOGRAFÍA Y LINAJE INDUSTRIAL ==================== -->
+        <section class="tab-content" id="tab-history">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Historiografía y Genealogía de la Mecánica</h1>
+                    <p>Evolución de los mecanismos desde la antigüedad clásica y el Renacimiento hasta la cinemática analítica moderna de Reuleaux y Freudenstein.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>1. El Nacimiento de la Biela-Manivela y la Transformación del Movimiento</h2>
+                    <p>La conversión cinemática entre movimiento rotativo continuo y vaivén alternativo marca la frontera entre la herramienta manual y la máquina autómata. El testimonio arqueológico e ingenieril más antiguo de un mecanismo de biela-manivela con transmisión por engranajes se encuentra en el aserradero hidráulico romano de Hierápolis (Frigia, actual Turquía), datado en la segunda mitad del siglo III d.C. En él, una rueda hidráulica movía una manivela que, mediante bielas de madera y bronce, accionaba dos sierras alternativas de vaivén para cortar bloques de mármol.</p>
+                    <p>Durante la Edad de Oro del Islam, el polímata e ingeniero Al-Jazari (1206) en su monumental <em>Kitāb fī ma'rifat al-hiyal al-handasiyya</em> (El libro del conocimiento de los dispositivos mecánicos ingeniosos) formalizó la biela-manivela para bombas hidráulicas de doble efecto con válvulas de retención cónicas, adelantándose en más de dos siglos a los cuadernos de Francesco di Giorgio Martini y Leonardo da Vinci.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>2. La Búsqueda de la Línea Recta: De Watt a Peaucellier</h2>
+                    <p>En el siglo XVIII, la fabricación de cilindros de vapor de gran diámetro presentaba una limitación crítica: no existían máquinas herramientas capaces de mecanizar guías prismáticas (correderas) de acero perfectamente planas y con suficiente resistencia al desgaste por fricción.</p>
+                    <p>James Watt se vio obligado a inventar en 1784 el <em>paralelogramo articulado de Watt</em> para guiar el vástago del émbolo en línea casi recta mediante articulaciones giratorias puras (las cuales podían ser torneadas y pulidas con excelente precisión en un torno simple). Watt escribió a su hijo:</p>
+                    <blockquote style="border-left: 3px solid var(--accent); padding-left: 15px; margin: 15px 0; font-style: italic; color: var(--text-muted);">
+                        "Aunque no me enorgullezco fácilmente de nada de lo que he hecho, estoy más orgulloso del movimiento de línea recta que de cualquier otra invención mecánica que haya concebido."
+                    </blockquote>
+                    <p>No obstante, la solución de Watt era una aproximación basada en el punto de inflexión de una curva lemniscata de quinto grado. Durante ocho décadas, la comunidad matemática debatió si era posible generar una línea recta <strong>matemáticamente exacta</strong> empleando exclusivamente juntas de revolución (pasadores cilíndricos). La respuesta afirmativa llegó en 1864 con Charles-Nicolas Peaucellier y en 1870 con Yom Tov Lipkin, demostrando el poder de la geometría proyectiva e inversión circular en el diseño de mecanismos.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>3. Franz Reuleaux y la Cinemática como Ciencia Rigurosa</h2>
+                    <p>En 1876, el ingeniero y profesor alemán Franz Reuleaux publicó su obra cumbre <em>Theoretische Kinematik: Grundzüge einer Theorie des Maschinenwesens</em>. Reuleaux revolucionó la ingeniería al independizar el estudio de las máquinas de la dinámica de fuerzas:</p>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>Definió el <strong>par cinemático</strong> como la restricción geométrica mutua de dos cuerpos rígidos en contacto.</li>
+                        <li>Clasificó los pares en <em>inferiores</em> (contacto de superficie: revolución, prismático, helicoidal) y <em>superiores</em> (contacto de línea o punto: levas, engranajes).</li>
+                        <li>Estableció la noción de <strong>cadena cinemática cerrada</strong> y la <strong>inversión cinemática</strong> (fijar distintos eslabones de una misma cadena para obtener mecanismos funcionalmente diversos).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: API PYTHON Y CÓDIGO ==================== -->
+        <section class="tab-content" id="tab-api">
+            <div class="doc-container">
+                <div class="doc-hero">
+                    <h1>Biblioteca Científica en Python (API)</h1>
+                    <p>Uso de <code>atlas_machinarum</code> como paquete de Python para simulación numérica, verificación cinemática y análisis de Grashof en entornos de ingeniería.</p>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Instalación del Paquete</h2>
+                    <p>El código fuente de <strong>Atlas Machinarum</strong> está estructurado como una biblioteca estándar de Python con soporte para CLI:</p>
+                    <pre class="code-block">git clone https://github.com/lorenhey/atlas-machinarum.git
+cd atlas-machinarum
+pip install -e .</pre>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Ejemplo: Análisis Cinemático de Cuatro Barras</h2>
+                    <pre class="code-block">import numpy as np
+from atlas_machinarum.library import FourBar
+
+# Instanciar mecanismo de 4 barras:
+# ground=0.20 m, crank=0.05 m, coupler=0.15 m, rocker=0.15 m
+fb = FourBar(ground=0.20, crank=0.05, coupler=0.15, rocker=0.15, cp_length=0.10, cp_angle=0.5)
+
+# Diagnosticar condición de Grashof
+print("Condición de Grashof:", fb.grashof_condition())
+# Salida: CRANK_ROCKER
+
+# Resolver estado cinemático para un ángulo de manivela theta2 = pi/4 (45°)
+state = fb.solve(theta2=np.pi / 4)
+
+print("Coordenadas articulación A (manivela):", state.points["A"])
+print("Coordenadas articulación B (balancín):", state.points["B"])
+print("Punto del acoplador P:", state.points["P"])
+print("Ángulo de transmisión (rad):", state.metrics["transmission_angle"])</pre>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Biela-Manivela y Verificación de Puntos Muertos</h2>
+                    <pre class="code-block">from atlas_machinarum.library import SliderCrank
+import numpy as np
+
+# Definir biela-manivela centrada (offset = 0)
+sc = SliderCrank(crank=0.05, rod=0.20, offset=0.0)
+
+# Punto muerto superior (theta = 0)
+pms = sc.solve(0.0)
+print("Posición PMS:", pms.points["B"][0]) # R + L = 0.25 m
+
+# Punto muerto inferior (theta = pi)
+pmi = sc.solve(np.pi)
+print("Posición PMI:", pmi.points["B"][0]) # L - R = 0.15 m
+print("Carrera total:", pms.points["B"][0] - pmi.points["B"][0]) # 2 * R = 0.10 m</pre>
+                </div>
+
+                <div class="doc-card">
+                    <h2>Ejecución de la Suite de Pruebas Automatizadas</h2>
+                    <pre class="code-block">pytest</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Script Principal de la Aplicación -->
+    <script type="module" src="js/app.js"></script>
+
 </body>
 </html>

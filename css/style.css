@@ -1,0 +1,662 @@
+/**
+ * ATLAS MACHINARUM - Estilos Técnicos de Ingeniería (CAD Blueprint)
+ */
+
+:root {
+    --bg-cad: #0f141d;
+    --bg-panel: #161d2a;
+    --bg-card: #1c2637;
+    --bg-input: #233044;
+    --border: #2d3d56;
+    --border-accent: #3d5475;
+    
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    
+    --accent: #38bdf8;         /* Cyan blueprint */
+    --accent-hover: #7dd3fc;
+    --accent-gold: #f59e0b;    /* Trajectory glow */
+    --accent-red: #ef4444;     /* Warning / Ground */
+    --accent-green: #10b981;   /* Velocity / Success */
+    
+    --link-color: #cbd5e1;
+    --ground-color: #f43f5e;
+    --pin-color: #38bdf8;
+    --overlay-color: #f97316;
+    
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+[data-theme="light"] {
+    --bg-cad: #f8fafc;
+    --bg-panel: #ffffff;
+    --bg-card: #f1f5f9;
+    --bg-input: #e2e8f0;
+    --border: #cbd5e1;
+    --border-accent: #94a3b8;
+    
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+    
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --accent-gold: #d97706;
+    --accent-red: #dc2626;
+    --accent-green: #059669;
+    
+    --link-color: #1e293b;
+    --ground-color: #e11d48;
+    --pin-color: #0284c7;
+    --overlay-color: #ea580c;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-cad);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Header superior */
+header {
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: #fff;
+    font-size: 16px;
+}
+
+.brand-title {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-main);
+}
+
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 4px;
+    background-color: var(--bg-card);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-btn:hover {
+    color: var(--text-main);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-btn.active {
+    background-color: var(--accent);
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.theme-toggle-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    transition: all 0.2s;
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--accent);
+}
+
+/* Contenedor Principal */
+.app-container {
+    flex: 1;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Vistas */
+.tab-content {
+    display: none;
+    width: 100%;
+    height: 100%;
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+/* Panel Lateral del Simulador */
+.workbench-sidebar {
+    width: 380px;
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+.sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Selector de Mecanismo */
+.mech-selector-select {
+    width: 100%;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.mech-selector-select:focus {
+    border-color: var(--accent);
+}
+
+.mech-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    background-color: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    margin-top: 6px;
+}
+
+/* Parámetros */
+.param-group {
+    margin-bottom: 14px;
+}
+
+.param-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+}
+
+.param-val {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.param-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.param-slider {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.param-number {
+    width: 75px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-align: right;
+}
+
+/* Métricas en Tiempo Real */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.metric-card {
+    background-color: var(--bg-card);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+}
+
+.metric-value {
+    font-size: 0.95rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 2px;
+}
+
+.metric-value.highlight {
+    color: var(--accent-gold);
+}
+
+.metric-value.safe {
+    color: var(--accent-green);
+}
+
+.metric-value.alert {
+    color: var(--accent-red);
+}
+
+/* Botones de acción */
+.btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn-action {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-action:hover {
+    border-color: var(--accent);
+    background-color: var(--bg-input);
+}
+
+.btn-action.primary {
+    background-color: var(--accent);
+    color: #0f172a;
+    border-color: var(--accent);
+    font-weight: 700;
+}
+
+.btn-action.primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-action.active-overlay {
+    background-color: rgba(249, 115, 22, 0.2);
+    border-color: var(--overlay-color);
+    color: var(--overlay-color);
+}
+
+/* Área de Canvas CAD */
+.workbench-viewport {
+    flex: 1;
+    position: relative;
+    background-color: var(--bg-cad);
+    overflow: hidden;
+}
+
+canvas#cadCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Controles de reproducción flotantes */
+.viewport-controls-bottom {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(22, 29, 42, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+}
+
+.play-pause-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    color: #0f172a;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 900;
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.play-pause-btn:hover {
+    transform: scale(1.08);
+}
+
+.scrub-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.angle-scrubber {
+    width: 220px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.angle-readout {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    min-width: 45px;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.speed-select {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+/* Herramientas de visualización en esquina */
+.viewport-tools-top {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background-color: rgba(22, 29, 42, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+}
+
+.tool-toggle-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.tool-toggle-btn:hover {
+    color: var(--text-main);
+    background-color: var(--bg-card);
+}
+
+.tool-toggle-btn.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background-color: rgba(56, 189, 248, 0.1);
+}
+
+/* Vistas de Documentación y Tratado */
+.doc-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.doc-hero {
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+}
+
+.doc-hero h1 {
+    font-family: var(--font-mono);
+    font-size: 2.2rem;
+    color: var(--text-main);
+    letter-spacing: 1px;
+}
+
+.doc-hero p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.6;
+}
+
+.doc-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.doc-card h2 {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.doc-card p {
+    color: var(--text-main);
+    line-height: 1.7;
+    margin-bottom: 16px;
+    font-size: 0.98rem;
+}
+
+.doc-card ul {
+    margin-left: 20px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+.math-block {
+    background-color: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+    overflow-x: auto;
+    font-family: 'KaTeX_Math', 'Times New Roman', serif;
+}
+
+/* Tabla de Matriz de Movimiento */
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+.matrix-table th {
+    background-color: var(--bg-card);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.matrix-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    vertical-align: top;
+}
+
+.matrix-table tr:hover td {
+    background-color: rgba(56, 189, 248, 0.04);
+}
+
+.pill-mech {
+    display: inline-block;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    margin: 2px 4px 2px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pill-mech:hover {
+    border-color: var(--accent);
+    background-color: var(--accent);
+    color: #0f172a;
+}
+
+/* Bloques de código */
+pre.code-block {
+    background-color: #090d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #38bdf8;
+    overflow-x: auto;
+    line-height: 1.5;
+    margin: 16px 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .app-container {
+        flex-direction: column;
+    }
+    .workbench-sidebar {
+        width: 100%;
+        height: 40%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+    .viewport-controls-bottom {
+        bottom: 10px;
+        padding: 6px 12px;
+        gap: 8px;
+    }
+    .angle-scrubber {
+        width: 120px;
+    }
+}
